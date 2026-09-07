@@ -10,31 +10,17 @@ import {
   successState,
 } from "@/lib/action-result";
 import { revalidateExpenseViews } from "@/lib/revalidate";
-import { formatMoneyWithUnit, formatPeriodLabel } from "@/lib/format";
-import { readPeriod, type Period } from "@/lib/period";
+import { formatMoneyWithUnit } from "@/lib/format";
 import { escapeMarkdown, sendTelegramMessage } from "@/lib/telegram";
-
-function periodFromForm(formData: FormData): Period {
-  return readPeriod({
-    month: String(formData.get("month") ?? ""),
-    year: String(formData.get("year") ?? ""),
-    all: String(formData.get("all") ?? ""),
-    from: String(formData.get("from") ?? ""),
-    to: String(formData.get("to") ?? ""),
-  });
-}
 
 export async function settleTransferAction(formData: FormData) {
   return runAction(async () => {
-    const period = periodFromForm(formData);
     const method = (formData.get("method") as SettlementMethod) || "equal";
     const fromUserId = Number(formData.get("fromUserId"));
     const toUserId = Number(formData.get("toUserId"));
 
     await connectDb();
-    const result = computeBalance
-      ? await computeBalance(period, method)
-      : null;
+    const result = await computeBalance(method);
     if (!result) return errorState("Không tính được đối soát");
 
     const transfer = result.transfers.find(
@@ -52,8 +38,8 @@ export async function settleTransferAction(formData: FormData) {
       {
         $setOnInsert: {
           sessionCode: result.sessionCode,
-          month: period.month,
-          year: period.year,
+          month: null,
+          year: null,
           method,
           totalAmount: result.totalAmount,
           perMemberAmount: result.perMemberAmount,
@@ -86,12 +72,11 @@ export async function settleTransferAction(formData: FormData) {
 
 export async function notifyBalanceAction(formData: FormData) {
   return runAction(async () => {
-    const period = periodFromForm(formData);
     const method = (formData.get("method") as SettlementMethod) || "equal";
-    const result = await computeBalance(period, method);
+    const result = await computeBalance(method);
 
     let message =
-      `📊 *Đối soát ${escapeMarkdown(formatPeriodLabel(period))}*\n` +
+      `📊 *Đối soát chưa thanh toán (toàn thời gian)*\n` +
       `Tổng: ${formatMoneyWithUnit(result.totalAmount)} · ${result.memberCount} người\n\n`;
 
     if (result.transfers.filter((item) => item.status === "pending").length === 0) {

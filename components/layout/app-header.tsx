@@ -55,7 +55,7 @@ export function AppHeader({ user }: { user: ShellUser | null }) {
       </div>
 
       <div className="flex items-center gap-gutter-xs lg:gap-gutter-md">
-        <PeriodPicker />
+        {pathname !== "/balance" ? <PeriodPicker /> : null}
         <CommandPalette />
         <ThemeToggle />
         <Button

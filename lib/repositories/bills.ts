@@ -275,8 +275,15 @@ export type MemberTotal = {
 
 export async function getTotalsByMember(
   period: Period,
+  options?: { unpaidOnly?: boolean },
 ): Promise<MemberTotal[]> {
   await connectDb();
+
+  const match: MatchStage = {
+    ...periodMatch(period),
+    ...EXPENSE_ONLY,
+  };
+  if (options?.unpaidOnly) match.isPaid = false;
 
   const rows = await BillModel.aggregate<{
     _id: number;
@@ -284,7 +291,7 @@ export async function getTotalsByMember(
     total: number;
     count: number;
   }>([
-    { $match: { ...periodMatch(period), ...EXPENSE_ONLY } },
+    { $match: match },
     {
       $group: {
         _id: "$userId",

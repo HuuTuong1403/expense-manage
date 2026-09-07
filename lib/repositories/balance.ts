@@ -1,5 +1,5 @@
 import { connectDb } from "@/lib/db";
-import { SettlementModel, settlementSessionCode } from "@/lib/models";
+import { SettlementModel } from "@/lib/models";
 import { removeDiacritics } from "@/lib/format";
 import { getTotalsByMember } from "@/lib/repositories/bills";
 import { listActiveUsers } from "@/lib/repositories/users";
@@ -19,19 +19,8 @@ export type {
 } from "@/lib/types";
 
 /** Nội dung chuyển khoản: Napas chỉ nhận ASCII nên phải bỏ dấu. */
-export function transferNote(
-  period: Period,
-  fromName: string,
-  toName: string,
-) {
-  const periodLabel = period.all
-    ? "tat ca"
-    : period.from || period.to
-      ? `${period.from ?? ""}-${period.to ?? ""}`
-      : `thang ${period.month}/${period.year}`;
-  return removeDiacritics(
-    `Doi soat ${periodLabel} - ${fromName} tra ${toName}`,
-  );
+export function transferNote(fromName: string, toName: string) {
+  return removeDiacritics(`Doi soat chua TT - ${fromName} tra ${toName}`);
 }
 
 /**
@@ -91,28 +80,23 @@ export function transferKey(fromUserId: number, toUserId: number) {
   return `${fromUserId}->${toUserId}`;
 }
 
+const ALL_TIME: Period = { month: null, year: null, all: true };
+
 export async function computeBalance(
-  period: Period,
   method: SettlementMethod = "equal",
 ): Promise<BalanceResult> {
   await connectDb();
 
-  const sessionCode = settlementSessionCode(
-    period.month,
-    period.year,
-    method,
-    period,
-  );
+  const sessionCode = `SETTLE-UNPAID-ALL-${method.toUpperCase()}`;
 
   const [users, totals, settlement] = await Promise.all([
     listActiveUsers(),
-    getTotalsByMember(period),
+    getTotalsByMember(ALL_TIME, { unpaidOnly: true }),
     SettlementModel.findOne({ sessionCode }).lean().exec(),
   ]);
 
   const paidByUser = new Map(totals.map((item) => [item.userId, item]));
-  // Tổng lấy từ toàn bộ hóa đơn trong kỳ, kể cả của người đã bị tắt, để số tổng
-  // luôn khớp với trang Hóa đơn.
+  // Tổng các hóa đơn chưa thanh toán mọi thời điểm, kể cả của người đã tắt.
   const totalAmount = totals.reduce((sum, item) => sum + item.total, 0);
 
   const weightSum =
@@ -161,7 +145,7 @@ export async function computeBalance(
   const pending = buildSettlements(members).map((item) => ({
     ...item,
     key: transferKey(item.fromUserId, item.toUserId),
-    note: transferNote(period, item.fromName, item.toName),
+    note: transferNote(item.fromName, item.toName),
     status: "pending" as const,
   }));
 

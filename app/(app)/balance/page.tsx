@@ -10,16 +10,17 @@ import { DivergingBalanceBars } from "@/components/charts/diverging-balance-bars
 import { SettlementCard } from "@/components/balance/settlement-card";
 import { NotifyBalanceButton } from "@/components/balance/notify-button";
 import { computeBalance, type SettlementMethod } from "@/lib/repositories/balance";
-import { readPeriod, readStringParam } from "@/lib/period";
-import { formatDate, formatPeriodLabel } from "@/lib/format";
+import { readStringParam, type Period } from "@/lib/period";
+import { formatDate } from "@/lib/format";
+
+const ALL_UNPAID: Period = { month: null, year: null, all: true };
 
 export default async function BalancePage({
   searchParams,
 }: PageProps<"/balance">) {
   const params = await searchParams;
-  const period = readPeriod(params);
   const method = (readStringParam(params, "method") as SettlementMethod) || "equal";
-  const result = await computeBalance(period, method);
+  const result = await computeBalance(method);
 
   const pending = result.transfers.filter((item) => item.status === "pending");
   const saved = ((result.naiveTransferCount - pending.length) /
@@ -40,15 +41,15 @@ export default async function BalancePage({
                 Kỳ quyết toán mở
               </Badge>
               <span className="text-body-sm text-outline">
-                · {formatPeriodLabel(period)}
+                · Toàn thời gian · chưa thanh toán
               </span>
             </div>
             <h1 className="text-headline-lg text-foreground">
               Đối soát công nợ nội bộ
             </h1>
             <p className="mt-1 max-w-xl text-body-md text-on-surface-variant">
-              Chia đều hoặc theo trọng số, rồi rút gọn các khoản phải trả thành
-              ít giao dịch nhất.
+              Chia đều hoặc theo trọng số trên mọi hóa đơn chưa thanh toán,
+              rồi rút gọn các khoản phải trả thành ít giao dịch nhất.
             </p>
           </div>
           <Segmented
@@ -65,7 +66,7 @@ export default async function BalancePage({
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Metric
             icon="payments"
-            label="Tổng chi tháng"
+            label="Tổng chưa thanh toán"
             value={<Money value={result.totalAmount} size="lg" unit />}
             hint={`${result.transfers.length} giao dịch đề xuất`}
           />
@@ -145,7 +146,7 @@ export default async function BalancePage({
             <EmptyState
               icon="verified"
               title="Mọi người đã cân bằng"
-              description="Không cần chuyển khoản cho kỳ này."
+              description="Không còn hóa đơn chưa thanh toán cần chia."
             />
           </SurfaceCard>
         ) : (
@@ -155,7 +156,7 @@ export default async function BalancePage({
                 key={transfer.key}
                 transfer={transfer}
                 receiver={byId.get(transfer.toUserId)}
-                period={period}
+                period={ALL_UNPAID}
                 method={method}
                 index={index + 1}
               />
@@ -200,12 +201,12 @@ export default async function BalancePage({
             <Button
               variant="subtle"
               size="md"
-              render={<a href={`/api/bills/export?month=${period.month ?? ""}&year=${period.year ?? ""}&all=${period.all ? "1" : ""}`} />}
+              render={<a href="/api/bills/export?all=1&status=unpaid" />}
             >
               <Icon name="table_view" size={18} />
               Xuất biên bản đối soát (Excel)
             </Button>
-            <NotifyBalanceButton period={period} method={method} />
+            <NotifyBalanceButton period={ALL_UNPAID} method={method} />
           </div>
           <p className="mt-3 text-body-sm text-outline">
             Lần ghi nhận gần nhất:{" "}
