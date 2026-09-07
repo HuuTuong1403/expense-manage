@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Combobox } from "@/components/ui/combobox";
 import { FormSelect } from "@/components/ui/form-select";
@@ -10,7 +11,30 @@ export type FilterOption = { value: string; label: string };
 /**
  * Nút lọc dạng "Nhãn: giá trị ▾" ghi vào query string, đúng toolbar mockup.
  */
-export function UrlFilter({
+export function UrlFilter(props: {
+  paramKey: string;
+  label: string;
+  options: FilterOption[];
+  emptyLabel?: string;
+  searchable?: boolean;
+  className?: string;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <UrlFilterControl
+          {...props}
+          current=""
+          onChange={() => undefined}
+        />
+      }
+    >
+      <UrlFilterInner {...props} />
+    </Suspense>
+  );
+}
+
+function UrlFilterInner({
   paramKey,
   label,
   options,
@@ -37,6 +61,39 @@ export function UrlFilter({
     params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
+
+  return (
+    <UrlFilterControl
+      paramKey={paramKey}
+      label={label}
+      options={options}
+      emptyLabel={emptyLabel}
+      searchable={searchable}
+      className={className}
+      current={current}
+      onChange={onChange}
+    />
+  );
+}
+
+function UrlFilterControl({
+  label,
+  options,
+  emptyLabel = "Tất cả",
+  searchable = false,
+  className,
+  current,
+  onChange,
+}: {
+  paramKey?: string;
+  label: string;
+  options: FilterOption[];
+  emptyLabel?: string;
+  searchable?: boolean;
+  className?: string;
+  current: string;
+  onChange: (value: string) => void;
+}) {
 
   const prefixed = options.map((option) => ({
     value: option.value,

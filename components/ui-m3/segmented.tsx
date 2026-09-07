@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,37 @@ export type SegmentedOption = {
  * "Tất cả / Cảnh báo / An toàn" và tab chia đều / theo trọng số.
  */
 export function Segmented({
+  paramKey,
+  options,
+  defaultValue,
+  className,
+}: {
+  paramKey: string;
+  options: SegmentedOption[];
+  defaultValue: string;
+  className?: string;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <SegmentedBar
+          options={options}
+          current={defaultValue}
+          className={className}
+        />
+      }
+    >
+      <SegmentedInner
+        paramKey={paramKey}
+        options={options}
+        defaultValue={defaultValue}
+        className={className}
+      />
+    </Suspense>
+  );
+}
+
+function SegmentedInner({
   paramKey,
   options,
   defaultValue,
@@ -37,6 +69,27 @@ export function Segmented({
   }
 
   return (
+    <SegmentedBar
+      options={options}
+      current={current}
+      className={className}
+      onSelect={select}
+    />
+  );
+}
+
+function SegmentedBar({
+  options,
+  current,
+  className,
+  onSelect,
+}: {
+  options: SegmentedOption[];
+  current: string;
+  className?: string;
+  onSelect?: (value: string) => void;
+}) {
+  return (
     <div
       role="tablist"
       className={cn(
@@ -52,7 +105,7 @@ export function Segmented({
             type="button"
             role="tab"
             aria-selected={isActive}
-            onClick={() => select(option.value)}
+            onClick={() => onSelect?.(option.value)}
             className={cn(
               "rounded-sm px-2.5 py-1 text-body-sm transition-colors",
               isActive

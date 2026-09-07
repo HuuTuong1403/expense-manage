@@ -31,6 +31,24 @@ function toObject(params: URLSearchParams) {
  * link chia sẻ được và kỳ được giữ nguyên khi chuyển trang.
  */
 export function PeriodPicker() {
+  return (
+    <React.Suspense fallback={<PeriodPickerFallback />}>
+      <PeriodPickerInner />
+    </React.Suspense>
+  );
+}
+
+function PeriodPickerFallback() {
+  return (
+    <div className="inline-flex h-9 min-w-36 items-center rounded-lg bg-surface p-0.5 shadow-sm">
+      <span className="px-gutter-sm font-mono text-numeric-sm font-semibold text-outline">
+        …
+      </span>
+    </div>
+  );
+}
+
+function PeriodPickerInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

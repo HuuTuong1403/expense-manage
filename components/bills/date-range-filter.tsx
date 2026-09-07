@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DateRangePicker } from "@/components/ui/date-picker";
 import {
@@ -14,6 +15,21 @@ import {
  * Khi kỳ đang là một tháng, hiện đầu–cuối tháng; đổi khoảng thì ghi lại query.
  */
 export function DateRangeFilter() {
+  return (
+    <Suspense
+      fallback={
+        <DateRangePicker
+          placeholder="Từ ngày – đến ngày"
+          className="bg-surface-low"
+        />
+      }
+    >
+      <DateRangeFilterInner />
+    </Suspense>
+  );
+}
+
+function DateRangeFilterInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

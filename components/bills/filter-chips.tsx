@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,18 @@ type Chip = {
 };
 
 export function FilterChips({
+  chips,
+}: {
+  chips: Chip[];
+}) {
+  return (
+    <Suspense fallback={null}>
+      <FilterChipsInner chips={chips} />
+    </Suspense>
+  );
+}
+
+function FilterChipsInner({
   chips,
 }: {
   chips: Chip[];

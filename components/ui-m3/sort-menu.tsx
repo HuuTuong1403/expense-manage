@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   DropdownMenu,
@@ -9,7 +10,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Icon } from "@/components/ui-m3/icon";
 
-export function SortMenu({
+export function SortMenu(props: {
+  paramKey?: string;
+  options: { value: string; label: string }[];
+  defaultValue: string;
+}) {
+  return (
+    <Suspense fallback={<SortMenuControl {...props} current={props.defaultValue} onSelect={() => undefined} />}>
+      <SortMenuInner {...props} />
+    </Suspense>
+  );
+}
+
+function SortMenuInner({
   paramKey = "sort",
   options,
   defaultValue,
@@ -22,8 +35,6 @@ export function SortMenu({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const current = searchParams.get(paramKey) ?? defaultValue;
-  const currentLabel =
-    options.find((option) => option.value === current)?.label ?? "";
 
   function select(value: string) {
     const params = new URLSearchParams(searchParams);
@@ -32,6 +43,27 @@ export function SortMenu({
     params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
+
+  return (
+    <SortMenuControl
+      options={options}
+      current={current}
+      onSelect={select}
+    />
+  );
+}
+
+function SortMenuControl({
+  options,
+  current,
+  onSelect,
+}: {
+  options: { value: string; label: string }[];
+  current: string;
+  onSelect: (value: string) => void;
+}) {
+  const currentLabel =
+    options.find((option) => option.value === current)?.label ?? "";
 
   return (
     <div className="flex items-center gap-1 font-mono text-code text-outline">
@@ -52,7 +84,7 @@ export function SortMenu({
           {options.map((option) => (
             <DropdownMenuItem
               key={option.value}
-              onClick={() => select(option.value)}
+              onClick={() => onSelect(option.value)}
               className="gap-2"
             >
               <span className="flex-1">{option.label}</span>

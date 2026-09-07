@@ -316,7 +316,19 @@ export function BillFormDialog({
 }
 
 /** Mở form tạo hóa đơn khi URL có `?new=1` (nút header / command palette). */
-export function NewBillFromQuery({
+export function NewBillFromQuery(props: {
+  categories: CategoryPlain[];
+  members: UserPlain[];
+  defaultUserId?: number;
+}) {
+  return (
+    <React.Suspense fallback={null}>
+      <NewBillFromQueryInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function NewBillFromQueryInner({
   categories,
   members,
   defaultUserId,

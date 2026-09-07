@@ -8,7 +8,28 @@ import { Icon } from "@/components/ui-m3/icon";
 /**
  * Ô tìm kiếm ghi vào query string, có debounce để không đẩy history mỗi lần gõ.
  */
-export function SearchInput({
+export function SearchInput(props: {
+  paramKey?: string;
+  placeholder: string;
+  className?: string;
+  inputClassName?: string;
+}) {
+  return (
+    <React.Suspense
+      fallback={
+        <SearchInputControl
+          {...props}
+          value=""
+          onChange={() => undefined}
+        />
+      }
+    >
+      <SearchInputInner {...props} />
+    </React.Suspense>
+  );
+}
+
+function SearchInputInner({
   paramKey = "q",
   placeholder,
   className,
@@ -43,6 +64,31 @@ export function SearchInput({
   }, [value, initial, commit]);
 
   return (
+    <SearchInputControl
+      placeholder={placeholder}
+      className={className}
+      inputClassName={inputClassName}
+      value={value}
+      onChange={setValue}
+    />
+  );
+}
+
+function SearchInputControl({
+  placeholder,
+  className,
+  inputClassName,
+  value,
+  onChange,
+}: {
+  placeholder: string;
+  className?: string;
+  inputClassName?: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+
+  return (
     <div className={cn("relative flex items-center", className)}>
       <Icon
         name="search"
@@ -52,7 +98,7 @@ export function SearchInput({
       <input
         type="search"
         value={value}
-        onChange={(event) => setValue(event.target.value)}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
         className={cn(
@@ -64,7 +110,7 @@ export function SearchInput({
         <button
           type="button"
           aria-label="Xóa từ khóa"
-          onClick={() => setValue("")}
+          onClick={() => onChange("")}
           className="absolute right-2 flex items-center text-outline transition-colors hover:text-foreground"
         >
           <Icon name="close" size={16} />
