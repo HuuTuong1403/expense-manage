@@ -105,7 +105,7 @@ export async function createBillAction(
         `• Loại: ${category.icon ?? ""} ${escapeMarkdown(category.name)}\n` +
         `• Số tiền: ${formatMoneyWithUnit(values.amount)}\n` +
         `• Ngày: ${formatDate(date)}\n` +
-        `• Ghi chú: êiiiiii  \n` +
+        `• Ghi chú: ${values.description}\n` +
         `• Người trả: ${escapeMarkdown(resolveUserName(user))}`,
     );
 
